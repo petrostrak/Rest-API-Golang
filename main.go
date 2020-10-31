@@ -22,7 +22,7 @@ type Author struct {
 	Lastname  string `json:"lastname"`
 }
 
-// Init books var as a slice Book struct
+// Init books var as a slice of Book
 var books []Book
 
 // Every func that is a route handler has to have (w http.ResponseWriter, r *http.Request) parameters.
@@ -36,7 +36,16 @@ func getBooks(w http.ResponseWriter, r *http.Request) {
 
 // Get book by id
 func getBook(w http.ResponseWriter, r *http.Request) {
-
+	w.Header().Set("Content-type", "application/json")
+	params := mux.Vars(r)
+	// loop through books and find id
+	for _, item := range books {
+		if item.ID == params["id"] {
+			json.NewEncoder(w).Encode(item)
+			return
+		}
+	}
+	json.NewEncoder(w).Encode(&Book{})
 }
 
 // Create book
@@ -58,7 +67,7 @@ func main() {
 	// Init router
 	r := mux.NewRouter()
 
-	// Mock data
+	// Mock data - todo implement DB
 	books = append(books, Book{ID: "1", Isbn: "332251", Title: "First Book", Author: &Author{Firstname: "Petros", Lastname: "Trak"}})
 	books = append(books, Book{ID: "2", Isbn: "433562", Title: "Second Book", Author: &Author{Firstname: "Eleni", Lastname: "Apost"}})
 	books = append(books, Book{ID: "3", Isbn: "985746", Title: "Third Book", Author: &Author{Firstname: "Greg", Lastname: "Bail"}})
