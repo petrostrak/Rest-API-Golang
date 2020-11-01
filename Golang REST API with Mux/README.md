@@ -1,6 +1,6 @@
 # book store api
 
-> A simple REST API built
+> A simple REST API
 
 * Mux package/dependencie
 ```
