@@ -1,10 +1,8 @@
 # go-rollercoaster-api
 
-> A simple REST API built for the kubucation YouTube channel
+> A simple REST API
 
 * No third-party packages/dependencies
-* Used in the "How to use curl as an HTTP Client" video
-* Building of this API available as a video (coming soon)
 
 ## Requirements
 
