@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -122,10 +123,37 @@ func newCoasterHandler() *coastersHandlers {
 	}
 }
 
+type adminPortal struct {
+	password string
+}
+
+func newAdminPortal() *adminPortal {
+	password := os.Getenv("ADMIN_PASSWORD")
+	if password == "" {
+		panic("Required env var ADMIN_PASSWORD not set")
+	}
+	return &adminPortal{password: password}
+}
+
+// curl localhost:8080/admin -u admin:secret
+func (a adminPortal) handler(w http.ResponseWriter, r *http.Request) {
+	user, pass, ok := r.BasicAuth()
+	if !ok || user != "admin" || pass != a.password {
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write([]byte("401 - unauthorized"))
+		return
+	}
+
+	w.Write([]byte("<html><h1>Super secret admin portal</h1></html>"))
+}
+
 func main() {
+	admin := newAdminPortal()
 	coastersHandlers := newCoasterHandler()
 	http.HandleFunc("/coasters", coastersHandlers.coasters)
 	http.HandleFunc("/coasters/", coastersHandlers.getCoaster)
+	// ADMIN_PASSWORD=secret go run main.go
+	http.HandleFunc("/admin", admin.handler)
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
 		panic(err)
