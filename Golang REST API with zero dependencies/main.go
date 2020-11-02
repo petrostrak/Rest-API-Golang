@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 )
@@ -59,6 +60,31 @@ func (h *coastersHandlers) get(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonByte)
 }
 
+func (h *coastersHandlers) getCoaster(w http.ResponseWriter, r *http.Request) {
+	parts := strings.Split(r.URL.String(), "/")
+	if len(parts) != 3 {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	h.Lock()
+	coaster, ok := h.store[parts[2]]
+	h.Unlock()
+	if !ok {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	jsonByte, err := json.Marshal(coaster)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	w.Header().Add("content-type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(jsonByte)
+}
+
 // curl localhost:8080/coasters -X POST -d '{"name": "Taron", "inPark" : "Phantasialand", "height": 30, "manufacturer": "Intamin"}' -H "Content-type: application/json"
 func (h *coastersHandlers) post(w http.ResponseWriter, r *http.Request) {
 	bodyBytes, err := ioutil.ReadAll(r.Body)
@@ -92,20 +118,14 @@ func (h *coastersHandlers) post(w http.ResponseWriter, r *http.Request) {
 
 func newCoasterHandler() *coastersHandlers {
 	return &coastersHandlers{
-		store: map[string]Coaster{
-			"id1": Coaster{
-				Name:         "Fury 325",
-				Height:       99,
-				InPark:       "Carowinds",
-				Manufacturer: "B&M",
-			},
-		},
+		store: map[string]Coaster{},
 	}
 }
 
 func main() {
 	coastersHandlers := newCoasterHandler()
 	http.HandleFunc("/coasters", coastersHandlers.coasters)
+	http.HandleFunc("/coasters/", coastersHandlers.getCoaster)
 	err := http.ListenAndServe(":8080", nil)
 	if err != nil {
 		panic(err)
